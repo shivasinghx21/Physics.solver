@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>स्थिरवैद्युतिकी प्रश्न हल - Electrostatics Solver</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #eef2f3;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  header {
+    padding: 1rem 1.5rem;
+    background: rgba(255 255 255 / 0.1);
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.8rem;
+    letter-spacing: 1.4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    user-select: none;
+  }
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  label {
+    font-weight: 600;
+    margin-top: 1rem;
+    user-select: none;
+  }
+  select, input[type="text"], input[type="number"] {
+    width: 100%;
+    font-size: 1.2rem;
+    padding: 0.8rem 1rem;
+    margin-top: 0.4rem;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    background: rgba(255 255 255 / 0.15);
+    color: #eef2f3;
+    box-shadow: inset 0 0 5px rgba(255 255 255 / 0.3);
+    transition: background 0.3s, color 0.3s;
+  }
+  select {
+    cursor: pointer;
+  }
+  select:focus, input[type="text"]:focus {
+    background: rgba(255 255 255 / 0.3);
+    color: #1a1a1a;
+  }
+  #inputArea {
+    margin-top: 1.2rem;
+    background: rgba(255 255 255 / 0.1);
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: inset 0 0 10px rgba(255 255 255 / 0.15);
+    user-select: none;
+  }
+  #customKeyboard {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    user-select: none;
+  }
+  /* Separate number and operator blocks */
+  #numberKeys, #operatorKeys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    flex: 1;
+  }
+  button.key {
+    font-size: 1.5rem;
+    padding: 1rem 0;
+    border-radius: 12px;
+    border: none;
+    background: #9277db;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 4px #6f59a3;
+    user-select: none;
+    transition: background 0.2s, transform 0.1s;
+  }
+  button.key:active {
+    background: #7b66c1;
+    box-shadow: 0 2px #564a81;
+    transform: translateY(2px);
+  }
+  #solveBtn {
+    margin-top: 1.5rem;
+    background: #3c1053;
+    font-size: 1.5rem;
+    padding: 1rem 0;
+    border-radius: 14px;
+    border: none;
+    color: #efd7ff;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 5px #2b0a3a;
+    transition: background 0.3s, transform 0.1s;
+    user-select: none;
+  }
+  #solveBtn:hover {
+    background: #5b1e79;
+    transform: scale(1.03);
+  }
+  #resultContainer {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: rgba(255 255 255 / 0.1);
+    border-radius: 16px;
+    min-height: 120px;
+    font-size: 1.2rem;
+    line-height: 1.5;
+    color: #d8cfea;
+    white-space: pre-wrap;
+    user-select: text;
+  }
+  #resultContainer sup {
+    font-size: 0.7em;
+  }
+  @media (max-width: 480px) {
+    header {
+      font-size: 1.4rem;
+      padding: 1rem;
+    }
+    button.key {
+      font-size: 1.3rem;
+      padding: 0.8rem 0;
+    }
+    #solveBtn {
+      font-size: 1.3rem;
+      padding: 0.8rem 0;
+      margin-top: 1rem;
+    }
+    #customKeyboard {
+      flex-direction: column;
+    }
+    #numberKeys, #operatorKeys {
+      grid-template-columns: repeat(6, 1fr);
+      margin-bottom: 0.5rem;
+    }
+  }
+</style>
+</head>
+<body>
+<header>स्थिरवैद्युतिकी प्रश्न हल</header>
+<main>
+  <label for="problemType">प्रश्न का प्रकार चुनें:</label>
+  <select id="problemType" aria-label="Problem Type">
+    <option value="">-- चुनें --</option>
+    <option value="coulombForce">कुलॉम्ब बल (Coulomb Force)</option>
+    <option value="electricFieldPointCharge">बिंदु आवेश का विद्युत क्षेत्र (Electric field by point charge)</option>
+    <option value="electricPotentialPointCharge">बिंदु आवेश का विद्युत विभव (Electric potential by point charge)</option>
+    <option value="potentialEnergy">विद्युत संभावित ऊर्जा (Potential Energy between charges)</option>
+    <option value="capacitanceParallelPlate">समान्तर प्लेट संधित्र (Capacitance of parallel plate capacitor)</option>
+    <option value="electricFieldDipole">डिपोल का विद्युत क्षेत्र (Electric field by dipole)</option>
+  </select>
+
+  <div id="inputArea" aria-live="polite" aria-atomic="true" aria-relevant="additions">
+    <!-- Dynamic inputs will appear here -->
+  </div>
+
+  <div id="customKeyboard" aria-label="संख्या एवं गणितीय चिह्न इनपुट कीबोर्ड" role="application" aria-live="polite" aria-atomic="true">
+    <div id="numberKeys" aria-label="संख्या कीपैड"></div>
+    <div id="operatorKeys" aria-label="ऑपरेटर कीपैड"></div>
+  </div>
+
+  <button id="solveBtn" aria-label="प्रश्न हल करें">हल करें</button>
+
+  <div id="resultContainer" aria-live="polite" role="region" aria-atomic="true" tabindex="0"></div>
+</main>
+
+<script>
+  const inputArea = document.getElementById('inputArea');
+  const problemType = document.getElementById('problemType');
+  const numberKeys = document.getElementById('numberKeys');
+  const operatorKeys = document.getElementById('operatorKeys');
+  const solveBtn = document.getElementById('solveBtn');
+  const resultContainer = document.getElementById('resultContainer');
+
+  let focusedInput = null;
+
+  // Separate arrays for numbers and operators
+  const numbers = ['7','8','9','4','5','6','1','2','3','0','.'];
+  const operators = ['+','-','*','/','^','(',')','DEL','CLR'];
+
+  // Create number buttons
+  function createNumberKeys() {
+    numberKeys.innerHTML = '';
+    numbers.forEach(key => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = key;
+      btn.className = 'key';
+      btn.setAttribute('aria-label', key);
+      btn.addEventListener('click', () => {
+        if(!focusedInput) {
+          alert('कृपया पहले कोई इनपुट क्षेत्र चुनें।');
+          return;
+        }
+        insertAtCursor(focusedInput, key);
+      });
+      numberKeys.appendChild(btn);
+    });
+  }
+
+  // Create operator buttons
+  function createOperatorKeys() {
+    operatorKeys.innerHTML = '';
+    operators.forEach(key => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = key;
+      btn.className = 'key';
+      btn.setAttribute('aria-label', key === 'DEL' ? 'हटाएं' : (key === 'CLR' ? 'साफ करें' : key));
+      btn.addEventListener('click', () => {
+        if(!focusedInput) {
+          alert('कृपया पहले कोई इनपुट क्षेत्र चुनें।');
+          return;
+        }
+        if(key === 'DEL') {
+          deleteAtCursor(focusedInput);
+        } else if(key === 'CLR') {
+          focusedInput.value = '';
+          focusedInput.focus();
+        } else {
+          insertAtCursor(focusedInput, key);
+        }
+      });
+      operatorKeys.appendChild(btn);
+    });
+  }
+
+  // Helper function to insert text at cursor position in input field
+  function insertAtCursor(input, text) {
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const value = input.value;
+    input.value = value.slice(0, start) + text + value.slice(end);
+    input.selectionStart = input.selectionEnd = start + text.length;
+    input.focus();
+    input.dispatchEvent(new Event('input'));
+  }
+
+  // Helper function to delete character before cursor position
+  function deleteAtCursor(input) {
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    if(start === end && start > 0) {
+      const value = input.value;
+      input.value = value.slice(0, start - 1) + value.slice(end);
+      input.selectionStart = input.selectionEnd = start - 1;
+      input.focus();
+      input.dispatchEvent(new Event('input'));
+    } else if(start !== end) {
+      const value = input.value;
+      input.value = value.slice(0, start) + value.slice(end);
+      input.selectionStart = input.selectionEnd = start;
+      input.focus();
+      input.dispatchEvent(new Event('input'));
+    }
+  }
+
+  // Block native keyboard by making inputs readonly and only allow input via custom keyboard
+  function blockNativeKeyboard(input) {
+    input.setAttribute('readonly', 'true');
+    input.addEventListener('focus', () => {
+      focusedInput = input;
+    });
+    input.addEventListener('click', () => {
+      focusedInput = input;
+    });
+    // Prevent pasting or manual input from keyboard
+    input.addEventListener('keydown', e => e.preventDefault());
+    input.addEventListener('paste', e => e.preventDefault());
+  }
+
+  // Problem inputs configuration
+  const problemInputs = {
+    coulombForce: [
+      { label: "पहला आवेश (q₁) in Coulombs (C)", id: "q1", placeholder: "उदा. 0.001 ^ 3 + 1/1000" },
+      { label: "दूसरा आवेश (q₂) in Coulombs (C)", id: "q2", placeholder: "उदा. 0.002 * 2" },
+      { label: "दूरी (r) in meters (m)", id: "r", placeholder: "उदा. (0.05 + 0.01)" }
+    ],
+    electricFieldPointCharge: [
+      { label: "आवेश (q) in Coulombs (C)", id: "q", placeholder: "उदा. 0.001 / 2" },
+      { label: "दूरी (r) in meters (m)", id: "r", placeholder: "उदा. 0.03" }
+    ],
+    electricPotentialPointCharge: [
+      { label: "आवेश (q) in Coulombs (C)", id: "q", placeholder: "उदा. 0.001 - 0.0005" },
+      { label: "दूरी (r) in meters (m)", id: "r", placeholder: "उदा. 0.03" }
+    ],
+    potentialEnergy: [
+      { label: "पहला आवेश (q₁) in Coulombs (C)", id: "q1", placeholder: "उदा. 0.001 * 2" },
+      { label: "दूसरा आवेश (q₂) in Coulombs (C)", id: "q2", placeholder: "उदा. 0.002 + 0.001" },
+      { label: "दूरी (r) in meters (m)", id: "r", placeholder: "उदा. 0.05" }
+    ],
+    capacitanceParallelPlate: [
+      { label: "प्लेट क्षेत्रफल (A) in square meters (m²)", id: "A", placeholder: "उदा. 0.01" },
+      { label: "प्लेट का अलगाव (d) in meters (m)", id: "d", placeholder: "उदा. 0.001" },
+      { label: "मध्यम का परमीटिविटी (εᵣ) (Relative Permittivity, e.g., 1 for vacuum)", id: "er", placeholder: "उदा. 1" }
+    ],
+    electricFieldDipole: [
+      { label: "डिपोल आवेश (q) in Coulombs (C)", id: "q", placeholder: "उदा. (0.001 + 0.0005)" },
+      { label: "डिपोल लंबाई (2a) in meters (m)", id: "l", placeholder: "उदा. 0.05" },
+      { label: "मापन बिंदु दूरी (r) in meters (m)", id: "r", placeholder: "उदा. 0.10" },
+      { label: "कोण θ (degrees) between dipole axis and point", id: "theta", placeholder: "उदा. 30" }
+    ]
+  };
+
+  // Render input fields dynamically for selected problem type
+  function renderInputs(type) {
+    inputArea.innerHTML = '';
+    resultContainer.textContent = '';
+    if (!type || !problemInputs[type]) return;
+    problemInputs[type].forEach(inputConfig => {
+      const label = document.createElement('label');
+      label.setAttribute('for', inputConfig.id);
+      label.textContent = inputConfig.label;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.id = inputConfig.id;
+      input.placeholder = inputConfig.placeholder;
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+
+      blockNativeKeyboard(input);
+
+      input.addEventListener('focus', () => {
+        focusedInput = input;
+      });
+
+      input.addEventListener('click', () => {
+        focusedInput = input;
+      });
+
+      inputArea.appendChild(label);
+      inputArea.appendChild(input);
+    });
+  }
+
+  // Replace '^' with '**' for exponentiation in JS
+  function preprocessExpression(expr) {
+    return expr.replace(/\^/g, '**');
+  }
+
+  // Safe evaluation of math expressions with allowed characters
+  function safeEval(expr) {
+    expr = expr.trim();
+    expr = preprocessExpression(expr);
+
+    if (!/^[0-9+\-*/().\s]+$/.test(expr)) {
+      return NaN;
+    }
+
+    try {
+      return new Function("return " + expr)();
+    } catch (e) {
+      return NaN;
+    }
+  }
+
+  // Format number with exponent for very big/small numbers
+  function formatNumber(value) {
+    if (value === 0) return "0";
+    const absVal = Math.abs(value);
+    if (absVal < 0.0001 || absVal >= 1e6) {
+      const exp = value.toExponential(4);
+      const parts = exp.split('e');
+      const mantissa = parts[0];
+      const exponent = parts[1].replace('+', '');
+      return `${mantissa} × 10<sup>${exponent}</sup>`;
+    } else {
+      return value.toFixed(6).replace(/\.?0+$/, "");
+    }
+  }
+
+  // Approximate number formatting with 3 significant digits
+  function formatApprox(value) {
+    if (value === 0) return "0";
+    const absVal = Math.abs(value);
+    if (absVal < 0.001 || absVal >= 1e5) {
+      const exp = value.toExponential(2);
+      const parts = exp.split('e');
+      const mantissa = parts[0];
+      const exponent = parts[1].replace('+', '');
+      return `${mantissa} × 10<sup>${exponent}</sup>`;
+    } else {
+      return value.toPrecision(3).replace(/\.?0+$/, '');
+    }
+  }
+
+  // Constants
+  const K = 8.9875517923e9; // Coulomb constant in N·m²/C²
+  const EPSILON_0 = 8.854187817e-12; // Vacuum permittivity F/m
+
+  // Physics calculations
+  function calculateCoulombForce(q1, q2, r) {
+    return K * Math.abs(q1) * Math.abs(q2) / (r * r);
+  }
+
+  function calculateElectricFieldPointCharge(q, r) {
+    return K * Math.abs(q) / (r * r);
+  }
+
+  function calculateElectricPotentialPointCharge(q, r) {
+    return K * q / r;
+  }
+
+  function calculatePotentialEnergy(q1, q2, r) {
+    return K * q1 * q2 / r;
+  }
+
+  function calculateCapacitanceParallelPlate(A, d, er) {
+    return er * EPSILON_0 * A / d;
+  }
+
+  function calculateElectricFieldDipole(q, l, r, thetaDeg) {
+    const a = l / 2;
+    const theta = thetaDeg * Math.PI / 180;
+    const p = 2 * q * a;
+    return (1 / (4 * Math.PI * EPSILON_0)) * (p / Math.pow(r, 3)) * Math.sqrt(1 + 3 * Math.cos(theta) ** 2);
+  }
+
+  // Setup keyboard and event listeners
+  createNumberKeys();
+  createOperatorKeys();
+
+  problemType.addEventListener('change', () => {
+    renderInputs(problemType.value);
+  });
+
+  solveBtn.addEventListener('click', () => {
+    const selectedType = problemType.value;
+    if (!selectedType) {
+      alert("कृपया प्रश्न का प्रकार चुनें।");
+      return;
+    }
+
+    const inputs = problemInputs[selectedType];
+    const values = {};
+    for (const inputConfig of inputs) {
+      const inputElem = document.getElementById(inputConfig.id);
+      if (!inputElem) continue;
+      const rawValue = inputElem.value.trim();
+      if (!rawValue) {
+        alert(`कृपया ${inputConfig.label} सही से भरें।`);
+        return;
+      }
+      const val = safeEval(rawValue);
+      if (isNaN(val)) {
+        alert(`कृपया ${inputConfig.label} में सही गणितीय अभिव्यक्ति दर्ज करें।`);
+        return;
+      }
+      values[inputConfig.id] = val;
+    }
+
+    let result = '';
+    switch (selectedType) {
+      case 'coulombForce': {
+        const F = calculateCoulombForce(values.q1, values.q2, values.r);
+        const sign = values.q1 * values.q2;
+        const nature = sign < 0 ? "आकर्षक बल" : (sign > 0 ? "पुशित बल (परस्पर विकर्षक)" : "शून्य बल");
+        result = `⚡ कुलॉम्ब बल:\n`
+          + `  सटीक उत्तर: ${formatNumber(F)} न्यूटन (N)\n`
+          + `  लगभग: ${formatApprox(F)} न्यूटन (N)\n`
+          + `प्रकृति: ${nature}\n\n`
+          + `सूत्र: F = k * |q₁ * q₂| / r²\n`
+          + `जहाँ k = ${formatNumber(K)} N·m²/C²।`;
+        break;
+      }
+      case 'electricFieldPointCharge': {
+        const E = calculateElectricFieldPointCharge(values.q, values.r);
+        result = `⚡ विद्युत क्षेत्र:\n`
+          + `  सटीक उत्तर: ${formatNumber(E)} N/C\n`
+          + `  लगभग: ${formatApprox(E)} N/C\n\n`
+          + `सूत्र: E = k * |q| / r²\n`
+          + `यह क्षेत्र आवेश और दूरी पर निर्भर करता है।`;
+        break;
+      }
+      case 'electricPotentialPointCharge': {
+        const V = calculateElectricPotentialPointCharge(values.q, values.r);
+        result = `⚡ विद्युत विभव:\n`
+          + `  सटीक उत्तर: ${formatNumber(V)} वोल्ट (V)\n`
+          + `  लगभग: ${formatApprox(V)} वोल्ट (V)\n\n`
+          + `सूत्र: V = k * q / r\n`
+          + `यह विभव आवेश और दूरी पर निर्भर करता है।`;
+        break;
+      }
+      case 'potentialEnergy': {
+        const U = calculatePotentialEnergy(values.q1, values.q2, values.r);
+        const sign = values.q1 * values.q2;
+        const nature = sign < 0 ? "आकर्षक स्थितिज ऊर्जा" : (sign > 0 ? "पुशित स्थितिज ऊर्जा" : "शून्य ऊर्जा");
+        result = `⚡ विद्युत संभावित ऊर्जा:\n`
+          + `  सटीक उत्तर: ${formatNumber(U)} जूल (J)\n`
+          + `  लगभग: ${formatApprox(U)} जूल (J)\n`
+          + `प्रकृति: ${nature}\n\n`
+          + `सूत्र: U = k * q₁ * q₂ / r\n`
+          + `यह ऊर्जा दो आवेशों के बीच स्थिर ऊर्जा होती है।`;
+        break;
+      }
+      case 'capacitanceParallelPlate': {
+        const C = calculateCapacitanceParallelPlate(values.A, values.d, values.er);
+        result = `⚡ धारिता:\n`
+          + `  सटीक उत्तर: ${formatNumber(C)} फ़ैराड (F)\n`
+          + `  लगभग: ${formatApprox(C)} फ़ैराड (F)\n\n`
+          + `सूत्र: C = εᵣ * ε₀ * A / d\n`
+          + `जहाँ:\n`
+          + `  ε₀ = ${formatNumber(EPSILON_0)} F/m (वैक्यूम परमीटिविटी)\n`
+          + `  εᵣ = मध्यम की सापेक्ष परमीटिविटी\n`
+          + `  A = प्लेट क्षेत्रफल (m²), d = दूरी (m)\n`
+          + `यह धारिता प्लेट क्षेत्रफल, दूरी, और माध्यम पर निर्भर करती है।`;
+        break;
+      }
+      case 'electricFieldDipole': {
+        if (values.r === 0) {
+          alert("दूरी (r) शून्य नहीं हो सकती। कृपया सही मान दर्ज करें।");
+          resultContainer.textContent = '';
+          return;
+        }
+        const E = calculateElectricFieldDipole(values.q, values.l, values.r, values.theta);
+        result = `⚡ डिपोल का विद्युत क्षेत्र:\n`
+          + `  सटीक उत्तर: ${formatNumber(E)} N/C\n`
+          + `  लगभग: ${formatApprox(E)} N/C\n\n`
+          + `सूत्र: E = (1 / 4πε₀) * (p / r³) * √(1 + 3 cos²θ)\n`
+          + `जहाँ p = 2 * q * a (डिपोल पलोंगता)\n`
+          + `θ = कोण डिपोल अक्ष और मापन बिंदु के बीच\n`
+          + `यह क्षेत्र डिपोल के आवेश, लंबाई, दूरी और कोण पर निर्भर करता है।`;
+        break;
+      }
+      default:
+        result = 'क्षमा करें, इस प्रश्न प्रकार के लिए गणना उपलब्ध नहीं है।';
+    }
+
+    resultContainer.innerHTML = result;
+    resultContainer.focus();
+  });
+</script>
+</body>
+</html>
+
